@@ -1,8 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   PHASES, getPhaseColors, TODAY, dayMs, addDays,
   fmtDate, fmtDateLong, avatarColor, initials,
-  tasksBySquad, escapeHtml, getCSSVar,
+  tasksBySquad, escapeHtml, getCSSVar, isDoingPriority, shouldExtendGanttToToday,
 } from '../utils/data.js';
 
 const DAY_W = 36;
@@ -46,10 +46,12 @@ function TimeHeader({ days, gridTemplate }) {
 
 function PhaseBars({ task, rangeStart, totalDays, onTip }) {
   const segs = task.phases.map((p, i) => {
+    const isLast = i === task.phases.length - 1;
+    const end = isLast && shouldExtendGanttToToday(task) && p.end < TODAY ? TODAY : p.end;
     const startOffset = Math.max(0, daysBetween(rangeStart, p.start));
-    const endOffset = Math.min(totalDays, daysBetween(rangeStart, p.end));
+    const endOffset = Math.min(totalDays, daysBetween(rangeStart, end));
     const width = Math.max(0, endOffset - startOffset);
-    return { ...p, startOffset, width, isFirst: i === 0, isLast: i === task.phases.length - 1 };
+    return { ...p, end, startOffset, width, isFirst: i === 0, isLast };
   }).filter(s => s.width > 0);
 
   if (!segs.length) return null;
@@ -78,7 +80,16 @@ function PhaseBars({ task, rangeStart, totalDays, onTip }) {
 }
 
 export default function Gantt({ squad, features }) {
-  const groups = useMemo(() => tasksBySquad(squad, features), [squad, features]);
+  const [priorityFilter, setPriorityFilter] = useState('All');
+  const groups = useMemo(() => {
+    const squadGroups = tasksBySquad(squad, features);
+    if (priorityFilter === 'Doing') {
+      return squadGroups
+        .map(group => ({ ...group, tasks: group.tasks.filter(isDoingPriority) }))
+        .filter(group => group.tasks.length > 0);
+    }
+    return squadGroups;
+  }, [squad, features, priorityFilter]);
   const [collapsed, setCollapsed] = useState({});
   const rangeStart = startOfRange();
   const totalDays = daysBetween(rangeStart, endOfRange());
@@ -122,7 +133,16 @@ export default function Gantt({ squad, features }) {
           <div className="gh-sub">Phases plotted across {totalDays} days · grouped by feature</div>
         </div>
         <div className="gantt-controls">
-          <div className="seg"><button className="active">Day</button><button>Week</button><button>Month</button></div>
+          <div className="seg">
+            <button
+              className={priorityFilter === 'All' ? 'active' : ''}
+              onClick={() => setPriorityFilter('All')}
+            >All</button>
+            <button
+              className={priorityFilter === 'Doing' ? 'active' : ''}
+              onClick={() => setPriorityFilter('Doing')}
+            >Priority Doing</button>
+          </div>
         </div>
       </div>
 
@@ -146,7 +166,7 @@ export default function Gantt({ squad, features }) {
                       <div className="task-name">{t.name}</div>
                       <div className="task-meta">
                         <span className="avatar" style={{ background: avatarColor(t.assignee) }}>{initials(t.assignee)}</span>
-                        <span>{t.assignee}</span>
+                        <span>{t.assignee}{t.priority ? ` - ${t.priority}` : ''}</span>
                       </div>
                     </div>
                     <div className="badge" style={{ background: pal.bg, color: pal.ink }}>{t.status}</div>

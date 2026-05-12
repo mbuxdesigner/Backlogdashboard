@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { parseGasData, tasksBySquad, fmtDateLong, TODAY } from './utils/data.js';
+import { parseGasData, tasksBySquad, fmtDateLong, isDoingPriority, isPoPendingStatus } from './utils/data.js';
 import Gantt from './components/Gantt.jsx';
 import TweaksPanel from './components/TweaksPanel.jsx';
 
@@ -57,10 +57,8 @@ function CombinedStats({ appData, squad }) {
   const groups = useMemo(() => tasksBySquad(squad, appData.FEATURES), [squad, appData.FEATURES]);
   const allTasks = groups.flatMap(g => g.tasks);
   const total = allTasks.length;
-  const doing = allTasks.filter(t =>
-    ['UI', 'Wireframe', 'Define', 'New', 'Update', 'Concept', 'Doing'].includes(t.status)
-  ).length;
-  const poPending = allTasks.filter(t => ['Sent to PO', 'PO Pending'].includes(t.status)).length;
+  const doing = allTasks.filter(isDoingPriority).length;
+  const poPending = allTasks.filter(isPoPendingStatus).length;
   const lastWeek = appData.WEEKLY.length >= 2 ? appData.WEEKLY[appData.WEEKLY.length - 2].value : 0;
   const delta = doing - lastWeek;
   const trendCls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
@@ -128,7 +126,7 @@ function CombinedStats({ appData, squad }) {
         <div className="cb-mini">
           <div className="mini-row">
             <div className="ms-title">
-              <span>In progress</span><span>UI · WF · Define · New</span>
+              <span>In progress</span><span>Priority - Doing</span>
             </div>
             <div className="ms-value">{doing}<small>of {total}</small></div>
             <ProgressBar pct={doingPct} variant="doing" />
@@ -136,7 +134,7 @@ function CombinedStats({ appData, squad }) {
           </div>
           <div className="mini-row">
             <div className="ms-title">
-              <span>PO pending</span><span>Sent to PO · PO Pending</span>
+              <span>PO pending</span><span>Status - PO Pending</span>
             </div>
             <div className="ms-value">{poPending}<small>tasks waiting</small></div>
             <ProgressBar pct={poPct} variant="po" />

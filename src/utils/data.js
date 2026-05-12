@@ -60,6 +60,33 @@ function getWeekLabel(d) {
   return 'W' + Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
 }
 
+export const norm = (value) => String(value || '').trim().toLowerCase();
+export const taskPriority = (task) => task.priority || task.Priority || task.level || task.Level || '';
+export const taskStatus = (task) => task.status || task.Status || '';
+export const isDoingPriority = (task) => norm(taskPriority(task)) === 'doing';
+export const isPoPendingStatus = (task) => norm(taskStatus(task)) === 'po pending';
+
+const GANTT_EXTEND_EXCLUDED_PRIORITIES = new Set([
+  'pending',
+  'level 1',
+  'level 2',
+  'level 3',
+  'level 4',
+  'release',
+]);
+
+const GANTT_EXTEND_EXCLUDED_STATUSES = new Set([
+  'release',
+  'hold',
+  'pending',
+  'new',
+]);
+
+export function shouldExtendGanttToToday(task) {
+  return !GANTT_EXTEND_EXCLUDED_PRIORITIES.has(norm(taskPriority(task))) &&
+    !GANTT_EXTEND_EXCLUDED_STATUSES.has(norm(taskStatus(task)));
+}
+
 /** Transform raw GAS JSON → { SQUADS, FEATURES, WEEKLY, GOLIVE, lastUpdated } */
 export function parseGasData(gasData) {
   const rawTasks = gasData.tasks || [];
@@ -73,6 +100,7 @@ export function parseGasData(gasData) {
   let fid = 1, tid = 1;
   rawTasks.forEach(t => {
     const fname = t.feature || 'Uncategorised';
+    const priority = taskPriority(t);
     if (!featureMap[fname]) {
       featureMap[fname] = { id: 'f' + fid++, name: fname, squad: t.squad || 'Unknown', tasks: [] };
     }
@@ -96,7 +124,8 @@ export function parseGasData(gasData) {
       name: t.task || 'Unnamed Task',
       assignee: t.designer || t.po || t.pm || 'Unknown',
       squad: t.squad || 'Unknown',
-      status: t.status || 'New',
+      status: taskStatus(t) || 'New',
+      priority,
       phases,
     });
   });
@@ -127,9 +156,7 @@ export function parseGasData(gasData) {
 
     const isCurrent = w === 0;
     if (isCurrent) {
-      count = rawTasks.filter(t =>
-        ['UI', 'Wireframe', 'Define', 'New', 'Concept', 'Doing', 'Update'].includes((t.status || '').trim())
-      ).length;
+      count = rawTasks.filter(isDoingPriority).length;
     }
     WEEKLY.push({ label: getWeekLabel(mon), value: count, current: isCurrent });
   }
@@ -138,7 +165,7 @@ export function parseGasData(gasData) {
   const sixWeeksAgo = new Date(thisMonday);
   sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 35);
   const GOLIVE = rawTasks
-    .filter(t => (t.status || '').toLowerCase() === 'release')
+    .filter(t => norm(taskStatus(t)) === 'release')
     .map(t => {
       let date = TODAY;
       if (t.dates) {
