@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   PHASES, getPhaseColors, TODAY, dayMs, addDays,
   fmtDate, fmtDateLong, avatarColor, initials,
@@ -81,6 +81,7 @@ function PhaseBars({ task, rangeStart, totalDays, onTip }) {
 
 export default function Gantt({ squad, features }) {
   const [priorityFilter, setPriorityFilter] = useState('All');
+  const timelineRef = useRef(null);
   const groups = useMemo(() => {
     const squadGroups = tasksBySquad(squad, features);
     if (priorityFilter === 'Doing') {
@@ -100,6 +101,14 @@ export default function Gantt({ squad, features }) {
   const totalTasks = groups.reduce((sum, g) => sum + g.tasks.length, 0);
 
   const [tip, setTip] = useState(null);
+
+  useEffect(() => {
+    const el = timelineRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollLeft = Math.max(0, todayOffset - el.clientWidth / 2);
+    });
+  }, [todayOffset, totalWidth, squad, priorityFilter]);
 
   useEffect(() => {
     const el = document.getElementById('tip');
@@ -178,7 +187,7 @@ export default function Gantt({ squad, features }) {
           ))}
         </div>
 
-        <div className="gantt-right">
+        <div className="gantt-right" ref={timelineRef}>
           <div style={{ width: totalWidth, position: 'relative' }}>
             <TimeHeader days={days} gridTemplate={gridTemplate} />
             <div className="gantt-rows-bg" style={{ position: 'relative' }}>

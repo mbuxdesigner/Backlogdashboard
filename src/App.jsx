@@ -81,9 +81,6 @@ function CombinedStats({ appData, squad }) {
   return (
     <div className="card combined">
       <div className="combined-grid">
-        <div className="cb-vdivider" />
-        <div className="cb-hdivider" />
-
         {/* Hero */}
         <div className="cb-hero">
           <div className="hero-head">
