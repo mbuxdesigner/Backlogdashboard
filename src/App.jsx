@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { parseGasData, tasksBySquad, fmtDateLong, isDoingPriority, isPoPendingStatus } from './utils/data.js';
+import { parseGasData, tasksBySquad, fmtDateLong, buildDoingWeekly, isDoingPriority, isPoPendingStatus, isStatus } from './utils/data.js';
 import Gantt from './components/Gantt.jsx';
 import TweaksPanel from './components/TweaksPanel.jsx';
 
@@ -13,6 +13,11 @@ const TWEAKS_DEFAULTS = {
   showTodayPulse: true,
   compactRows: false,
   monoTitles: false,
+};
+
+const SQUAD_GROUPS = {
+  'APP MB': ['Core', 'Card', 'Base', 'Lending', 'ESaving', 'Upsale', 'Sub', 'Onboarding', 'VietQR', 'Billing', 'Partnership', 'CSOP', 'Junior'],
+  Other: ['MBSeller', 'DigiTrading', 'CRM', 'Visual', 'BaaS', 'Ads Portal'],
 };
 
 function useTweaks(defaults) {
@@ -59,14 +64,19 @@ function CombinedStats({ appData, squad }) {
   const total = allTasks.length;
   const doing = allTasks.filter(isDoingPriority).length;
   const poPending = allTasks.filter(isPoPendingStatus).length;
-  const lastWeek = appData.WEEKLY.length >= 2 ? appData.WEEKLY[appData.WEEKLY.length - 2].value : 0;
+  const readyToDev = allTasks.filter(t => isStatus(t, 'Ready to Dev')).length;
+  const uat = allTasks.filter(t => isStatus(t, 'UAT')).length;
+  const weekly = useMemo(() => buildDoingWeekly(allTasks), [allTasks]);
+  const lastWeek = weekly.length >= 2 ? weekly[weekly.length - 2].value : 0;
   const delta = doing - lastWeek;
   const trendCls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
   const trendArrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
-  const max = Math.max(...appData.WEEKLY.map(w => w.value), 1);
-  const totalWk = appData.WEEKLY.reduce((s, w) => s + w.value, 0);
+  const max = Math.max(...weekly.map(w => w.value), 1);
+  const totalWk = weekly.reduce((s, w) => s + w.value, 0);
   const doingPct = total ? Math.round(doing / total * 100) : 0;
   const poPct = total ? Math.round(poPending / total * 100) : 0;
+  const readyPct = total ? Math.round(readyToDev / total * 100) : 0;
+  const uatPct = total ? Math.round(uat / total * 100) : 0;
 
   return (
     <div className="card combined">
@@ -108,7 +118,7 @@ function CombinedStats({ appData, squad }) {
             </div>
           </div>
           <div className="bars">
-            {appData.WEEKLY.map((w, i) => (
+            {weekly.map((w, i) => (
               <div className="bar-col" key={i}>
                 <div className="bar-stack">
                   <div
@@ -139,6 +149,22 @@ function CombinedStats({ appData, squad }) {
             <div className="ms-value">{poPending}<small>tasks waiting</small></div>
             <ProgressBar pct={poPct} variant="po" />
             <div className="ms-foot"><span>{poPct}% of pipeline</span><span>avg wait 3.2d</span></div>
+          </div>
+          <div className="mini-row">
+            <div className="ms-title">
+              <span>Ready to Dev</span><span>Status - Ready</span>
+            </div>
+            <div className="ms-value">{readyToDev}<small>tasks</small></div>
+            <ProgressBar pct={readyPct} variant="ready" />
+            <div className="ms-foot"><span>{readyPct}% of pipeline</span><span>handoff</span></div>
+          </div>
+          <div className="mini-row">
+            <div className="ms-title">
+              <span>UAT</span><span>Status - UAT</span>
+            </div>
+            <div className="ms-value">{uat}<small>tasks</small></div>
+            <ProgressBar pct={uatPct} variant="uat" />
+            <div className="ms-foot"><span>{uatPct}% of pipeline</span><span>testing</span></div>
           </div>
         </div>
       </div>
@@ -174,6 +200,7 @@ export default function App() {
   const [appData, setAppData] = useState(null);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [squadGroup, setSquadGroup] = useState('All');
   const [squad, setSquad] = useState('All');
   const [tweaks, setTweak] = useTweaks(TWEAKS_DEFAULTS);
 
@@ -200,6 +227,13 @@ export default function App() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchData(true);
+  };
+
+  const activeSquads = squad === 'All' ? (SQUAD_GROUPS[squadGroup] || 'All') : squad;
+  const visibleSquads = SQUAD_GROUPS[squadGroup] || [];
+  const chooseSquadGroup = (group) => {
+    setSquadGroup(group);
+    setSquad('All');
   };
 
   if (error) return (
@@ -235,7 +269,7 @@ export default function App() {
         {/* ── Topbar ── */}
         <div className="topbar">
           <div className="brand">
-            <div className="brand-mark">D</div>
+            <div className="brand-mark">UX</div>
             <div className="brand-text">
               <div className="b1">Design Ops</div>
               <div className="b2">Task Dashboard</div>
@@ -276,23 +310,38 @@ export default function App() {
         {/* ── Squad filter ── */}
         <div className="filterrow">
           <span className="filter-label">Squad</span>
-          {appData.SQUADS.map(s => (
+          {['All', 'APP MB', 'Other'].map(group => (
             <button
-              key={s}
-              className={`squad-pill${squad === s ? ' active' : ''}`}
-              onClick={() => setSquad(s)}
-            >{s}</button>
+              key={group}
+              className={`squad-pill squad-group${squadGroup === group ? ' active' : ''}`}
+              onClick={() => chooseSquadGroup(group)}
+            >{group === 'All' ? 'ALL' : group}</button>
           ))}
+          {visibleSquads.length > 0 && (
+            <div className="squad-subgroup">
+              <button
+                className={`squad-pill squad-sub${squad === 'All' ? ' active' : ''}`}
+                onClick={() => setSquad('All')}
+              >All {squadGroup}</button>
+              {visibleSquads.map(s => (
+                <button
+                  key={s}
+                  className={`squad-pill squad-sub${squad === s ? ' active' : ''}`}
+                  onClick={() => setSquad(s)}
+                >{s}</button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Stats + GoLive ── */}
         <div className="overview overview-2">
-          <CombinedStats appData={appData} squad={squad} />
+          <CombinedStats appData={appData} squad={activeSquads} />
           <GoLive appData={appData} />
         </div>
 
         {/* ── Gantt ── */}
-        <Gantt squad={squad} features={appData.FEATURES} />
+        <Gantt squad={activeSquads} features={appData.FEATURES} />
       </div>
 
       {/* ── Tweaks Panel ── */}

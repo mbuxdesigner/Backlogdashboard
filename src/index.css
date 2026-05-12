@@ -47,7 +47,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .brand{display:flex;align-items:center;gap:12px}
-.brand-mark{width:40px;height:40px;border-radius:12px;background:var(--ink-0);display:grid;place-items:center;color:white;font-family:'Instrument Serif',serif;font-size:24px;font-style:italic}
+.brand-mark{width:40px;height:40px;border-radius:12px;background:var(--ink-0);display:grid;place-items:center;color:white;font-family:'Instrument Serif',serif;font-size:20px;font-style:italic}
 .brand-text{display:flex;flex-direction:column;line-height:1.1}
 .brand-text .b1{font-size:13px;color:var(--ink-2);font-weight:500;letter-spacing:.02em}
 .brand-text .b2{font-size:15px;color:var(--ink-0);font-weight:600}
@@ -69,6 +69,9 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .filterrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:24px}
 .filter-label{font-size:12px;color:var(--ink-2);margin-right:6px;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
 .squad-pill{border:1px solid var(--line);background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);padding:7px 14px;border-radius:999px;font-family:inherit;font-size:13px;font-weight:500;color:var(--ink-1);cursor:pointer;transition:.15s}
+.squad-group{font-size:14px;font-weight:700;padding:9px 20px}
+.squad-subgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-basis:100%;padding-left:72px;margin-top:2px}
+.squad-sub{font-size:12px;padding:6px 12px}
 .squad-pill:hover{background:white;transform:translateY(-1px)}
 .squad-pill:active{transform:translateY(0)}
 .squad-pill.active{background:var(--ink-0);color:white;border-color:var(--ink-0)}
@@ -86,7 +89,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .combined-grid > .cb-weekly{grid-column:3;grid-row:1}
 .combined-grid > .cb-vdivider{grid-column:2;grid-row:1/4;background:var(--line);width:1px}
 .combined-grid > .cb-hdivider{grid-column:1/4;grid-row:2;background:var(--line);height:1px}
-.combined-grid > .cb-mini{grid-column:1/4;grid-row:3;flex-direction:row !important;gap:32px !important}
+.combined-grid > .cb-mini{grid-column:1/4;grid-row:3;display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr));gap:32px !important}
 .combined-grid > .cb-mini .mini-row{flex:1;min-width:0}
 .combined-grid > div{min-width:0}
 .combined-grid > .cb-hero,.combined-grid > .cb-weekly,.combined-grid > .cb-mini{display:flex;flex-direction:column;gap:14px}
@@ -133,6 +136,8 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .ms-bar > span{position:absolute;inset:0 auto 0 0;border-radius:999px;transition:width .6s cubic-bezier(.2,.7,.2,1)}
 .ms-bar.doing > span{background:linear-gradient(90deg,#ffd2b3,#ff9b5e)}
 .ms-bar.po > span{background:linear-gradient(90deg,#fff1b8,#ffc94a)}
+.ms-bar.ready > span{background:linear-gradient(90deg,#c9efd8,#5fb377)}
+.ms-bar.uat > span{background:linear-gradient(90deg,#d9e0ff,#7a5fd1)}
 .ms-foot{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:6px;font-family:'JetBrains Mono',monospace}
 
 .golive{padding:22px 24px}
@@ -211,6 +216,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .tip.show{opacity:1;transform:translateY(0)}
 .tip .t-phase{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .tip .t-task{font-weight:600;margin-bottom:4px}
+.tip .t-desc{color:rgba(255,255,255,.8);margin:2px 0 6px}
 .tip .t-meta{color:rgba(255,255,255,.65);font-family:'JetBrains Mono',monospace;font-size:11px}
 .tip .t-status{margin-top:6px;font-size:11px;color:rgba(255,255,255,.85)}
 
@@ -243,11 +249,14 @@ body.mono-titles .pagetitle,body.mono-titles .hero-number,body.mono-titles .ms-v
   .overview,.overview.overview-2{grid-template-columns:1fr 1fr}
   .combined-grid{grid-template-columns:1fr}
   .combined-grid > .cb-vdivider,.combined-grid > .cb-hdivider{display:none}
+  .combined-grid > .cb-mini{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pagetitle{font-size:48px}
 }
 @media(max-width:768px){
   .app{padding:16px 16px 60px}
   .overview,.overview.overview-2{grid-template-columns:1fr}
   .gantt-body{grid-template-columns:220px 1fr}
+  .combined-grid > .cb-mini{grid-template-columns:1fr}
+  .squad-subgroup{padding-left:0}
   .pagetitle{font-size:36px}
 }

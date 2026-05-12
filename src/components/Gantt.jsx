@@ -67,8 +67,8 @@ function PhaseBars({ task, rangeStart, totalDays, onTip }) {
             key={i}
             className={`phase-bar${s.isFirst ? ' first' : ''}${s.isLast ? ' last' : ''}`}
             style={{ flex: `0 0 ${s.width * DAY_W}px`, background: pal.bg, color: pal.ink }}
-            onMouseEnter={e => onTip(e, { phase: s.phase, start: s.start, end: s.end, task: task.name, status: task.status })}
-            onMouseMove={e => onTip(e, { phase: s.phase, start: s.start, end: s.end, task: task.name, status: task.status })}
+            onMouseEnter={e => onTip(e, { phase: s.phase, start: s.start, end: s.end, task: task.name, status: task.status, description: task.description })}
+            onMouseMove={e => onTip(e, { phase: s.phase, start: s.start, end: s.end, task: task.name, status: task.status, description: task.description })}
             onMouseLeave={() => onTip(null)}
           >
             {s.width >= 3 ? s.phase : ''}
@@ -112,6 +112,7 @@ export default function Gantt({ squad, features }) {
       el.innerHTML = `
         <span class="t-phase" style="background:${getCSSVar(pal.bg)};color:${getCSSVar(pal.ink)}">${tip.phase}</span>
         <div class="t-task">${escapeHtml(tip.task)}</div>
+        ${tip.description ? `<div class="t-desc">${escapeHtml(tip.description)}</div>` : ''}
         <div class="t-meta">${fmtDateLong(tip.start)} → ${fmtDateLong(tip.end)}</div>
         <div class="t-status">Status: <strong>${escapeHtml(tip.status)}</strong></div>
       `;

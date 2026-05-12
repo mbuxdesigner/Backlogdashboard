@@ -63,8 +63,10 @@ function getWeekLabel(d) {
 export const norm = (value) => String(value || '').trim().toLowerCase();
 export const taskPriority = (task) => task.priority || task.Priority || task.level || task.Level || '';
 export const taskStatus = (task) => task.status || task.Status || '';
+export const taskDescription = (task) => task.description || task.Description || task.desc || task.Desc || '';
 export const isDoingPriority = (task) => norm(taskPriority(task)) === 'doing';
 export const isPoPendingStatus = (task) => norm(taskStatus(task)) === 'po pending';
+export const isStatus = (task, status) => norm(taskStatus(task)) === norm(status);
 
 const GANTT_EXTEND_EXCLUDED_PRIORITIES = new Set([
   'pending',
@@ -85,6 +87,31 @@ const GANTT_EXTEND_EXCLUDED_STATUSES = new Set([
 export function shouldExtendGanttToToday(task) {
   return !GANTT_EXTEND_EXCLUDED_PRIORITIES.has(norm(taskPriority(task))) &&
     !GANTT_EXTEND_EXCLUDED_STATUSES.has(norm(taskStatus(task)));
+}
+
+export function buildDoingWeekly(tasks) {
+  const thisMonday = new Date(TODAY);
+  const dow = thisMonday.getDay();
+  thisMonday.setDate(thisMonday.getDate() - (dow === 0 ? 6 : dow - 1));
+
+  const doingTasks = tasks.filter(isDoingPriority);
+  const WEEKLY = [];
+  for (let w = 5; w >= 0; w--) {
+    const mon = new Date(thisMonday);
+    mon.setDate(mon.getDate() - w * 7);
+    const sun = new Date(mon);
+    sun.setDate(sun.getDate() + 6);
+
+    const current = w === 0;
+    const value = current
+      ? doingTasks.length
+      : doingTasks.filter(task =>
+        (task.phases || []).some(phase => phase.start >= mon && phase.start <= sun)
+      ).length;
+
+    WEEKLY.push({ label: getWeekLabel(mon), value, current });
+  }
+  return WEEKLY;
 }
 
 /** Transform raw GAS JSON → { SQUADS, FEATURES, WEEKLY, GOLIVE, lastUpdated } */
@@ -126,6 +153,7 @@ export function parseGasData(gasData) {
       squad: t.squad || 'Unknown',
       status: taskStatus(t) || 'New',
       priority,
+      description: taskDescription(t),
       phases,
     });
   });
@@ -137,29 +165,7 @@ export function parseGasData(gasData) {
   const dow = thisMonday.getDay();
   thisMonday.setDate(thisMonday.getDate() - (dow === 0 ? 6 : dow - 1));
 
-  const WEEKLY = [];
-  for (let w = 5; w >= 0; w--) {
-    const mon = new Date(thisMonday);
-    mon.setDate(mon.getDate() - w * 7);
-    const sun = new Date(mon);
-    sun.setDate(sun.getDate() + 6);
-
-    let count = 0;
-    rawTasks.forEach(t => {
-      if (t.dates && typeof t.dates === 'object') {
-        Object.values(t.dates).forEach(v => {
-          const d = parseDate(v);
-          if (d && d >= mon && d <= sun) count++;
-        });
-      }
-    });
-
-    const isCurrent = w === 0;
-    if (isCurrent) {
-      count = rawTasks.filter(isDoingPriority).length;
-    }
-    WEEKLY.push({ label: getWeekLabel(mon), value: count, current: isCurrent });
-  }
+  const WEEKLY = buildDoingWeekly(FEATURES.flatMap(f => f.tasks));
 
   // GOLIVE — Released tasks
   const sixWeeksAgo = new Date(thisMonday);
@@ -188,6 +194,12 @@ export function parseGasData(gasData) {
 
 export function tasksBySquad(squad, features) {
   if (squad === 'All') return features;
+  if (Array.isArray(squad)) {
+    const allowed = new Set(squad.map(norm));
+    return features
+      .map(f => ({ ...f, tasks: f.tasks.filter(t => allowed.has(norm(t.squad))) }))
+      .filter(f => f.tasks.length > 0);
+  }
   return features
     .map(f => ({ ...f, tasks: f.tasks.filter(t => (t.squad || '').trim() === squad) }))
     .filter(f => f.tasks.length > 0);
