@@ -77,6 +77,12 @@ export function formatSheetDateValue(value, fallbackDate) {
   return '';
 }
 
+function parseSheetDisplayDate(value) {
+  const match = String(value || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return null;
+  return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+}
+
 const field = (obj, keys) => {
   for (const key of keys) {
     if (obj?.[key] !== undefined && obj?.[key] !== null && obj?.[key] !== '') return obj[key];
@@ -210,6 +216,7 @@ export function parseGasData(gasData) {
   const GOLIVE = (rawGolive.length ? rawGolive.map(g => {
     const rawDate = field(g, ['date', 'Date', 'ngay', 'Ngay', 'ngày', 'Ngày']);
     const date = parseDate(rawDate) || TODAY;
+    const displayDate = formatSheetDateValue(rawDate, date);
     return {
       type: field(g, ['type', 'Type']) || '✅ Golive',
       squad: canonicalSquad(field(g, ['squad', 'Squad'])),
@@ -217,7 +224,8 @@ export function parseGasData(gasData) {
       note: field(g, ['note', 'Note']),
       ux: field(g, ['ux', 'UX']),
       date,
-      displayDate: formatSheetDateValue(rawDate, date),
+      displayDate,
+      sortDate: parseSheetDisplayDate(displayDate) || date,
     };
   }) : rawTasks
     .filter(t => norm(taskStatus(t)) === 'release')
@@ -227,10 +235,19 @@ export function parseGasData(gasData) {
         const e = Object.entries(t.dates).find(([k]) => k.toLowerCase().includes('release'));
         if (e) date = parseDate(e[1]) || TODAY;
       }
-      return { type: '✅ Golive', squad: canonicalSquad(t.squad), feature: t.feature, note: t.task, ux: t.designer || '', date };
+      return {
+        type: '✅ Golive',
+        squad: canonicalSquad(t.squad),
+        feature: t.feature,
+        note: t.task,
+        ux: t.designer || '',
+        date,
+        displayDate: fmtDateSheet(date),
+        sortDate: date,
+      };
     }))
-    .filter(g => g.date >= sixWeeksAgo)
-    .sort((a, b) => b.date - a.date);
+    .filter(g => (g.sortDate || g.date) >= sixWeeksAgo)
+    .sort((a, b) => (b.sortDate || b.date) - (a.sortDate || a.date));
 
   return {
     SQUADS,
