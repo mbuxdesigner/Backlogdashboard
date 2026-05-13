@@ -145,7 +145,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .golive-head h3 em{font-style:italic;color:var(--ink-2)}
 .golive-head .gh-meta{font-size:11px;color:var(--ink-3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.08em}
 .timeline{overflow-y:auto;max-height:300px}
-.tl-item{display:grid;grid-template-columns:52px 22px minmax(0,1fr);gap:10px;position:relative;padding:6px 0 16px}
+.tl-item{display:grid;grid-template-columns:92px 22px minmax(0,1fr);gap:10px;position:relative;padding:6px 0 16px}
 .tl-dateblock{font-family:'JetBrains Mono',monospace;color:var(--ink-2);font-size:11px;line-height:1.25;text-align:right;padding-top:2px}
 .tl-dateblock span,.tl-dateblock strong{display:block}
 .tl-dateblock strong{font-weight:500;color:var(--ink-3)}

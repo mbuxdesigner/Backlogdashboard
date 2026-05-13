@@ -38,6 +38,7 @@ TODAY.setHours(0, 0, 0, 0);
 export const dayMs = 24 * 60 * 60 * 1000;
 export const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 export const fmtDate = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+export const fmtDateSheet = (d) => `${fmtDate(d)}/${d.getFullYear()}`;
 export const fmtDateLong = (d) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
 export const AVATAR_COLORS = ['#7a5fd1', '#d75f87', '#5fa8d7', '#5fb377', '#d79f5f', '#9d5fd7', '#d76b5f'];
@@ -73,6 +74,10 @@ function getWeekLabel(d) {
 }
 
 export const norm = (value) => String(value || '').trim().toLowerCase();
+export const canonicalSquad = (value) => {
+  const squad = String(value || '').trim();
+  return norm(squad).replace(/\s+/g, '') === 'appbase' ? 'Base' : squad;
+};
 export const taskPriority = (task) => task.priority || task.Priority || task.level || task.Level || '';
 export const taskStatus = (task) => task.status || task.Status || '';
 export const taskDescription = (task) => task.description || task.Description || task.desc || task.Desc || '';
@@ -131,7 +136,7 @@ export function parseGasData(gasData) {
   const rawTasks = gasData.tasks || [];
 
   // SQUADS
-  const squadSet = new Set(rawTasks.map(t => (t.squad || '').trim()).filter(Boolean));
+  const squadSet = new Set(rawTasks.map(t => canonicalSquad(t.squad)).filter(Boolean));
   const SQUADS = ['All', ...Array.from(squadSet).sort()];
 
   // FEATURES / TASKS
@@ -140,8 +145,9 @@ export function parseGasData(gasData) {
   rawTasks.forEach(t => {
     const fname = t.feature || 'Uncategorised';
     const priority = taskPriority(t);
+    const squad = canonicalSquad(t.squad) || 'Unknown';
     if (!featureMap[fname]) {
-      featureMap[fname] = { id: 'f' + fid++, name: fname, squad: t.squad || 'Unknown', tasks: [] };
+      featureMap[fname] = { id: 'f' + fid++, name: fname, squad, tasks: [] };
     }
 
     // Build phases from dates object
@@ -162,7 +168,7 @@ export function parseGasData(gasData) {
       id: 't' + tid++,
       name: t.task || 'Unnamed Task',
       assignee: t.designer || t.po || t.pm || 'Unknown',
-      squad: t.squad || 'Unknown',
+      squad,
       status: taskStatus(t) || 'New',
       priority,
       description: taskDescription(t),
@@ -185,7 +191,7 @@ export function parseGasData(gasData) {
   const rawGolive = gasData.golive || gasData.GoLive || gasData.GOLIVE || [];
   const GOLIVE = (rawGolive.length ? rawGolive.map(g => ({
     type: field(g, ['type', 'Type']) || '✅ Golive',
-    squad: field(g, ['squad', 'Squad']),
+    squad: canonicalSquad(field(g, ['squad', 'Squad'])),
     feature: field(g, ['feature', 'Feature']),
     note: field(g, ['note', 'Note']),
     ux: field(g, ['ux', 'UX']),
@@ -198,7 +204,7 @@ export function parseGasData(gasData) {
         const e = Object.entries(t.dates).find(([k]) => k.toLowerCase().includes('release'));
         if (e) date = parseDate(e[1]) || TODAY;
       }
-      return { type: '✅ Golive', squad: t.squad || '', feature: t.feature, note: t.task, ux: t.designer || '', date };
+      return { type: '✅ Golive', squad: canonicalSquad(t.squad), feature: t.feature, note: t.task, ux: t.designer || '', date };
     }))
     .filter(g => g.date >= sixWeeksAgo)
     .sort((a, b) => b.date - a.date);
@@ -215,13 +221,13 @@ export function parseGasData(gasData) {
 export function tasksBySquad(squad, features) {
   if (squad === 'All') return features;
   if (Array.isArray(squad)) {
-    const allowed = new Set(squad.map(norm));
+    const allowed = new Set(squad.map(s => norm(canonicalSquad(s))));
     return features
-      .map(f => ({ ...f, tasks: f.tasks.filter(t => allowed.has(norm(t.squad))) }))
+      .map(f => ({ ...f, tasks: f.tasks.filter(t => allowed.has(norm(canonicalSquad(t.squad)))) }))
       .filter(f => f.tasks.length > 0);
   }
   return features
-    .map(f => ({ ...f, tasks: f.tasks.filter(t => (t.squad || '').trim() === squad) }))
+    .map(f => ({ ...f, tasks: f.tasks.filter(t => canonicalSquad(t.squad) === canonicalSquad(squad)) }))
     .filter(f => f.tasks.length > 0);
 }
 
