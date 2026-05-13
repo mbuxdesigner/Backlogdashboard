@@ -1,41 +1,16 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { parseGasData, tasksBySquad, fmtDateLong, buildDoingWeekly, isDoingPriority, isPoPendingStatus, isStatus, norm } from './utils/data.js';
+import { parseGasData, tasksBySquad, buildDoingWeekly, isDoingPriority, isPoPendingStatus, isStatus, norm } from './utils/data.js';
 import Gantt from './components/Gantt.jsx';
-import TweaksPanel from './components/TweaksPanel.jsx';
 
 // ── CONFIG ─────────────────────────────────────────────
 // Set your Apps Script Web App URL in .env as VITE_GAS_API_URL
 const GAS_API_URL = import.meta.env.VITE_GAS_API_URL || '';
 // ────────────────────────────────────────────────────────
 
-const TWEAKS_DEFAULTS = {
-  accent: ['#ffe2cc', '#d9e0ff', '#d4f0e0'],
-  showTodayPulse: true,
-  compactRows: false,
-  monoTitles: false,
-};
-
 const SQUAD_GROUPS = {
   'APP MB': ['Core', 'Card', 'Base', 'Lending', 'ESaving', 'Upsale', 'Sub', 'Onboarding', 'VietQR', 'Billing', 'Partnership', 'CSOP', 'Junior'],
   Other: ['MBSeller', 'DigiTrading', 'CRM', 'Visual', 'BaaS', 'Ads Portal'],
 };
-
-function useTweaks(defaults) {
-  const [tweaks, setTweaks] = useState(() => {
-    try {
-      const saved = localStorage.getItem('dashboard-tweaks');
-      return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
-    } catch { return defaults; }
-  });
-  const setTweak = useCallback((key, val) => {
-    setTweaks(t => {
-      const next = { ...t, [key]: val };
-      try { localStorage.setItem('dashboard-tweaks', JSON.stringify(next)); } catch {}
-      return next;
-    });
-  }, []);
-  return [tweaks, setTweak];
-}
 
 // ── STAT CARDS ──────────────────────────────────────────
 function StatNumber({ value, label }) {
@@ -56,6 +31,10 @@ function ProgressBar({ pct, variant = 'doing' }) {
       <span style={{ width: `${Math.min(pct, 100)}%` }} />
     </div>
   );
+}
+
+function fmtDayMonth(d) {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 function CombinedStats({ appData, squad }) {
@@ -191,13 +170,20 @@ function GoLive({ appData, squad }) {
         )}
         {releases.map((g, i) => (
           <div className="tl-item" key={i}>
-            <div className="tl-feature">
-              <span className="tl-type">{g.type}</span>
-              {g.squad && <span className="tl-squad">{g.squad}</span>}
-              <span>{g.feature}</span>
+            <div className="tl-dateblock">
+              <span>{fmtDayMonth(g.date)}</span>
+              <strong>{g.date.getFullYear()}</strong>
             </div>
-            {g.note && <div className="tl-task">{g.note}</div>}
-            <div className="tl-date">{fmtDateLong(g.date)}{g.ux ? ` - UX: ${g.ux}` : ''}</div>
+            <div className="tl-axis" aria-hidden="true" />
+            <div className="tl-content">
+              <div className="tl-type">{g.type}</div>
+              <div className="tl-feature">
+                {g.squad && <span className="tl-squad">{g.squad}</span>}
+                <span>{g.feature}</span>
+              </div>
+              {g.ux && <div className="tl-meta">UX: {g.ux}</div>}
+              {g.note && <div className="tl-note">Note: {g.note}</div>}
+            </div>
           </div>
         ))}
       </div>
@@ -212,8 +198,6 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [squadGroup, setSquadGroup] = useState('All');
   const [squad, setSquad] = useState('All');
-  const [tweaks, setTweak] = useTweaks(TWEAKS_DEFAULTS);
-
   const fetchData = useCallback((forceRefresh = false) => {
     if (!GAS_API_URL) {
       // Demo/dev mode — use mock data
@@ -354,8 +338,6 @@ export default function App() {
         <Gantt squad={activeSquads} features={appData.FEATURES} />
       </div>
 
-      {/* ── Tweaks Panel ── */}
-      <TweaksPanel title="Dashboard tweaks" tweaks={tweaks} setTweak={setTweak} />
     </div>
   );
 }
