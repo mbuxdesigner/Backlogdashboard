@@ -222,6 +222,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loadProgress, setLoadProgress] = useState(8);
+  const [showRefreshToast, setShowRefreshToast] = useState(false);
   const [squadGroup, setSquadGroup] = useState('All');
   const [squad, setSquad] = useState('All');
 
@@ -236,7 +237,12 @@ export default function App() {
           setError(null);
         })
         .catch(err => setError(err.message))
-        .finally(() => setRefreshing(false));
+        .finally(() => {
+          setRefreshing(false);
+          if (forceRefresh) {
+            window.setTimeout(() => setShowRefreshToast(false), 900);
+          }
+        });
       return;
     }
     const url = `${GAS_API_URL}?page=api${forceRefresh ? '&refresh=1' : ''}`;
@@ -249,7 +255,12 @@ export default function App() {
         setError(null);
       })
       .catch(err => setError(err.message))
-      .finally(() => setRefreshing(false));
+      .finally(() => {
+        setRefreshing(false);
+        if (forceRefresh) {
+          window.setTimeout(() => setShowRefreshToast(false), 900);
+        }
+      });
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -263,6 +274,7 @@ export default function App() {
 
   const onRefresh = () => {
     setRefreshing(true);
+    setShowRefreshToast(true);
     fetchData(true);
   };
 
@@ -296,6 +308,15 @@ export default function App() {
     <div>
       <div className="page-bg" aria-hidden="true" />
       {refreshing && <div className="load-progress active"><span style={{ width: `${loadProgress}%` }} /></div>}
+      {showRefreshToast && (
+        <div className={`refresh-toast${refreshing ? '' : ' done'}`} role="status">
+          <div className="rt-copy">
+            <span>{refreshing ? 'Đang load dữ liệu' : 'Đã load dữ liệu'}</span>
+            <strong>{Math.round(loadProgress)}%</strong>
+          </div>
+          <div className="rt-bar"><span style={{ width: `${loadProgress}%` }} /></div>
+        </div>
+      )}
       <div id="tip" className="tip" role="tooltip" aria-hidden="true" />
 
       <div className="app">
