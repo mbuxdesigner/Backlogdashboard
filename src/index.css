@@ -43,7 +43,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 
 .page-bg{position:fixed;inset:0;background:radial-gradient(60% 50% at 8% 0%,#ffe2cc 0%,rgba(255,226,204,0) 60%),radial-gradient(55% 45% at 100% 10%,#d9e0ff 0%,rgba(217,224,255,0) 65%),radial-gradient(70% 60% at 90% 95%,#d4f0e0 0%,rgba(212,240,224,0) 60%),radial-gradient(50% 40% at 0% 100%,#ffd9e0 0%,rgba(255,217,224,0) 65%),var(--bg-0);z-index:-1}
 
-.app{max-width:1760px;margin:0 auto;padding:24px 24px 80px;position:relative}
+.app{max-width:100%;margin-left:120px;margin-right:120px;padding:24px 0 80px;position:relative}
 
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .brand{display:flex;align-items:center;gap:12px}
@@ -89,6 +89,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .combined-grid > .cb-weekly{grid-column:2;grid-row:1}
 .combined-grid > .cb-mini{grid-column:1/3;grid-row:2;display:grid !important;grid-template-columns:repeat(4,minmax(0,1fr));gap:32px !important}
 .combined-grid > .cb-mini .mini-row{flex:1;min-width:0}
+.cb-mini{padding-top:32px}
 .combined-grid > div{min-width:0}
 .combined-grid > .cb-hero,.combined-grid > .cb-weekly,.combined-grid > .cb-mini{display:flex;flex-direction:column;gap:14px}
 .cb-hero .hero-number{font-size:80px}
@@ -270,7 +271,7 @@ body.mono-titles .pagetitle,body.mono-titles .hero-number,body.mono-titles .ms-v
   .pagetitle{font-size:48px}
 }
 @media(max-width:768px){
-  .app{padding:16px 14px 60px}
+  .app{margin-left:14px;margin-right:14px;padding:16px 0 60px}
   .overview,.overview.overview-2{grid-template-columns:1fr}
   .gantt-body{grid-template-columns:220px 1fr}
   .combined-grid > .cb-mini{grid-template-columns:1fr}
