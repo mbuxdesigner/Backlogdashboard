@@ -46,12 +46,24 @@ export const initials = (name) => (name || '?').split(' ').map(s => s[0]).slice(
 
 export function parseDate(str) {
   if (!str) return null;
+  if (str instanceof Date) return isNaN(str) ? null : str;
+  if (typeof str !== 'string') {
+    const d = new Date(str);
+    return isNaN(d) ? null : d;
+  }
   const parts = str.split('/');
   if (parts.length === 3) return new Date(+parts[2], +parts[1] - 1, +parts[0]);
   // Try ISO
   const d = new Date(str);
   return isNaN(d) ? null : d;
 }
+
+const field = (obj, keys) => {
+  for (const key of keys) {
+    if (obj?.[key] !== undefined && obj?.[key] !== null && obj?.[key] !== '') return obj[key];
+  }
+  return '';
+};
 
 function getWeekLabel(d) {
   const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -170,7 +182,15 @@ export function parseGasData(gasData) {
   // GOLIVE — Released tasks
   const sixWeeksAgo = new Date(thisMonday);
   sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 35);
-  const GOLIVE = rawTasks
+  const rawGolive = gasData.golive || gasData.GoLive || gasData.GOLIVE || [];
+  const GOLIVE = (rawGolive.length ? rawGolive.map(g => ({
+    type: field(g, ['type', 'Type']) || '✅ Golive',
+    squad: field(g, ['squad', 'Squad']),
+    feature: field(g, ['feature', 'Feature']),
+    note: field(g, ['note', 'Note']),
+    ux: field(g, ['ux', 'UX']),
+    date: parseDate(field(g, ['date', 'Date', 'ngay', 'Ngay', 'ngày', 'Ngày'])) || TODAY,
+  })) : rawTasks
     .filter(t => norm(taskStatus(t)) === 'release')
     .map(t => {
       let date = TODAY;
@@ -178,8 +198,8 @@ export function parseGasData(gasData) {
         const e = Object.entries(t.dates).find(([k]) => k.toLowerCase().includes('release'));
         if (e) date = parseDate(e[1]) || TODAY;
       }
-      return { feature: t.feature, task: t.task, date };
-    })
+      return { type: '✅ Golive', squad: t.squad || '', feature: t.feature, note: t.task, ux: t.designer || '', date };
+    }))
     .filter(g => g.date >= sixWeeksAgo)
     .sort((a, b) => b.date - a.date);
 

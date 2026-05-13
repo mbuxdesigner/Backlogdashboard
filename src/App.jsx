@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { parseGasData, tasksBySquad, fmtDateLong, buildDoingWeekly, isDoingPriority, isPoPendingStatus, isStatus } from './utils/data.js';
+import { parseGasData, tasksBySquad, fmtDateLong, buildDoingWeekly, isDoingPriority, isPoPendingStatus, isStatus, norm } from './utils/data.js';
 import Gantt from './components/Gantt.jsx';
 import TweaksPanel from './components/TweaksPanel.jsx';
 
@@ -169,22 +169,35 @@ function CombinedStats({ appData, squad }) {
   );
 }
 
-function GoLive({ appData }) {
+function GoLive({ appData, squad }) {
+  const releases = useMemo(() => {
+    if (squad === 'All') return appData.GOLIVE;
+    if (Array.isArray(squad)) {
+      const allowed = new Set(squad.map(norm));
+      return appData.GOLIVE.filter(g => allowed.has(norm(g.squad)));
+    }
+    return appData.GOLIVE.filter(g => norm(g.squad) === norm(squad));
+  }, [appData.GOLIVE, squad]);
+
   return (
     <div className="card golive" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="golive-head">
         <h3>GoLive <em>· last 6 weeks</em></h3>
-        <span className="gh-meta">{appData.GOLIVE.length} releases</span>
+        <span className="gh-meta">{releases.length} releases</span>
       </div>
       <div className="timeline" style={{ flex: 1 }}>
-        {appData.GOLIVE.length === 0 && (
+        {releases.length === 0 && (
           <div style={{ color: 'var(--ink-3)', fontSize: 13, padding: '8px 0' }}>No recent releases</div>
         )}
-        {appData.GOLIVE.map((g, i) => (
+        {releases.map((g, i) => (
           <div className="tl-item" key={i}>
-            <div className="tl-feature">{g.feature}</div>
-            <div className="tl-task">{g.task}</div>
-            <div className="tl-date">Released · {fmtDateLong(g.date)}</div>
+            <div className="tl-feature">
+              <span className="tl-type">{g.type}</span>
+              {g.squad && <span className="tl-squad">{g.squad}</span>}
+              <span>{g.feature}</span>
+            </div>
+            {g.note && <div className="tl-task">{g.note}</div>}
+            <div className="tl-date">{fmtDateLong(g.date)}{g.ux ? ` - UX: ${g.ux}` : ''}</div>
           </div>
         ))}
       </div>
@@ -334,7 +347,7 @@ export default function App() {
         {/* ── Stats + GoLive ── */}
         <div className="overview overview-2">
           <CombinedStats appData={appData} squad={activeSquads} />
-          <GoLive appData={appData} />
+          <GoLive appData={appData} squad={activeSquads} />
         </div>
 
         {/* ── Gantt ── */}
