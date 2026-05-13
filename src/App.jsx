@@ -58,6 +58,10 @@ function LoadingSkeleton({ progress }) {
   );
 }
 
+function fmtDayMonth(d) {
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 function CombinedStats({ appData, squad }) {
   const groups = useMemo(() => tasksBySquad(squad, appData.FEATURES), [squad, appData.FEATURES]);
   const allTasks = groups.flatMap(g => g.tasks);
@@ -133,7 +137,7 @@ function CombinedStats({ appData, squad }) {
         <div className="cb-mini">
           <div className="mini-row">
             <div className="ms-title">
-              <span>In progress</span><span>Priority - Doing</span>
+              <span>In progress</span>
             </div>
             <div className="ms-value">{doing}<small>of {total}</small></div>
             <ProgressBar pct={doingPct} variant="doing" />
@@ -141,7 +145,7 @@ function CombinedStats({ appData, squad }) {
           </div>
           <div className="mini-row">
             <div className="ms-title">
-              <span>PO pending</span><span>Status - PO Pending</span>
+              <span>PO pending</span>
             </div>
             <div className="ms-value">{poPending}<small>tasks waiting</small></div>
             <ProgressBar pct={poPct} variant="po" />
@@ -149,7 +153,7 @@ function CombinedStats({ appData, squad }) {
           </div>
           <div className="mini-row">
             <div className="ms-title">
-              <span>Ready to Dev</span><span>Status - Ready</span>
+              <span>Ready to Dev</span>
             </div>
             <div className="ms-value">{readyToDev}<small>tasks</small></div>
             <ProgressBar pct={readyPct} variant="ready" />
@@ -157,7 +161,7 @@ function CombinedStats({ appData, squad }) {
           </div>
           <div className="mini-row">
             <div className="ms-title">
-              <span>UAT</span><span>Status - UAT</span>
+              <span>UAT</span>
             </div>
             <div className="ms-value">{uat}<small>tasks</small></div>
             <ProgressBar pct={uatPct} variant="uat" />
@@ -192,7 +196,8 @@ function GoLive({ appData, squad }) {
         {releases.map((g, i) => (
           <div className="tl-item" key={i}>
             <div className="tl-dateblock">
-              <span>{g.displayDate}</span>
+              <span>{fmtDayMonth(g.date)}</span>
+              <strong>{g.date.getFullYear()}</strong>
             </div>
             <div className="tl-axis" aria-hidden="true" />
             <div className="tl-content">
