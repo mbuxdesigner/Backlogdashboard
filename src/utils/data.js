@@ -60,7 +60,19 @@ export function parseDate(str) {
 }
 
 export function formatSheetDateValue(value, fallbackDate) {
-  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (typeof value === 'string' && value.trim()) {
+    const raw = value.trim();
+    const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) {
+      const first = Number(match[1]);
+      const second = Number(match[2]);
+      if (first <= 12) {
+        return `${match[2].padStart(2, '0')}/${match[1].padStart(2, '0')}/${match[3]}`;
+      }
+      if (second <= 12) return `${match[1].padStart(2, '0')}/${match[2].padStart(2, '0')}/${match[3]}`;
+    }
+    return raw;
+  }
   if (fallbackDate instanceof Date && !isNaN(fallbackDate)) return fmtDateSheet(fallbackDate);
   return '';
 }
