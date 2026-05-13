@@ -147,7 +147,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .timeline{overflow-y:auto;max-height:300px}
 .tl-item{display:grid;grid-template-columns:92px 22px minmax(0,1fr);gap:10px;position:relative;padding:6px 0 16px}
 .tl-dateblock{font-family:'JetBrains Mono',monospace;color:var(--ink-2);font-size:11px;line-height:1.25;text-align:right;padding-top:2px}
-.tl-dateblock span,.tl-dateblock strong{display:block}
+.tl-dateblock span,.tl-dateblock strong{display:block;white-space:nowrap}
 .tl-dateblock strong{font-weight:500;color:var(--ink-3)}
 .tl-axis{position:relative;min-height:100%}
 .tl-axis::before{content:'';position:absolute;left:50%;top:15px;bottom:-19px;width:2px;transform:translateX(-50%);background:var(--p-release-bg)}
@@ -239,7 +239,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .load-progress span{display:block;height:100%;border-radius:0 999px 999px 0;background:linear-gradient(90deg,#ff9b5e,#5fb377,#7a5fd1);transition:width .22s ease}
 .load-progress.active{height:2px}
 .skeleton-page{min-height:100vh}
-.sk{position:relative;overflow:hidden;background:rgba(255,255,255,.72);border:1px solid var(--line);border-radius:14px}
+.sk,.sk-card{position:relative;overflow:hidden;background:rgba(255,255,255,.72);border:1px solid var(--line);border-radius:14px}
 .sk::after,.sk-card::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent);animation:shimmer 1.25s infinite}
 .sk-brand{width:176px;height:42px}
 .sk-action{width:190px;height:44px;border-radius:999px}
