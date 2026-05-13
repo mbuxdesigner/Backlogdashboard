@@ -27,8 +27,33 @@ function StatNumber({ value, label }) {
 
 function ProgressBar({ pct, variant = 'doing' }) {
   return (
-    <div className={`ms-bar ${variant}`} style={{ marginTop: 8 }}>
+    <div className={`ms-bar ${variant}`}>
       <span style={{ width: `${Math.min(pct, 100)}%` }} />
+    </div>
+  );
+}
+
+function LoadingSkeleton({ progress }) {
+  return (
+    <div>
+      <div className="page-bg" aria-hidden="true" />
+      <div className="load-progress"><span style={{ width: `${progress}%` }} /></div>
+      <div className="app skeleton-page">
+        <div className="topbar">
+          <div className="sk sk-brand" />
+          <div className="sk sk-action" />
+        </div>
+        <div className="titlerow">
+          <div className="sk sk-title" />
+          <div className="sk sk-subtitle" />
+        </div>
+        <div className="sk sk-filter" />
+        <div className="overview overview-2">
+          <div className="card sk-card sk-overview" />
+          <div className="card sk-card sk-golive" />
+        </div>
+        <div className="card sk-card sk-gantt" />
+      </div>
     </div>
   );
 }
@@ -196,12 +221,16 @@ export default function App() {
   const [appData, setAppData] = useState(null);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(8);
   const [squadGroup, setSquadGroup] = useState('All');
   const [squad, setSquad] = useState('All');
   const fetchData = useCallback((forceRefresh = false) => {
+    setLoadProgress(forceRefresh ? 18 : 8);
     if (!GAS_API_URL) {
       // Demo/dev mode — use mock data
-      import('./utils/mockData.js').then(m => setAppData(m.MOCK_DATA)).catch(console.error);
+      import('./utils/mockData.js')
+        .then(m => { setLoadProgress(100); setAppData(m.MOCK_DATA); })
+        .catch(console.error);
       return;
     }
     const url = `${GAS_API_URL}?page=api${forceRefresh ? '&refresh=1' : ''}`;
@@ -209,6 +238,7 @@ export default function App() {
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(data => {
         if (data.error) throw new Error(data.error);
+        setLoadProgress(100);
         setAppData(parseGasData(data));
         setError(null);
       })
@@ -217,6 +247,13 @@ export default function App() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    if (appData || error) return;
+    const id = window.setInterval(() => {
+      setLoadProgress(p => Math.min(p + Math.max(1, (92 - p) * 0.14), 92));
+    }, 180);
+    return () => window.clearInterval(id);
+  }, [appData, error]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -247,16 +284,12 @@ export default function App() {
     </div>
   );
 
-  if (!appData) return (
-    <div className="loading-screen">
-      <div className="spinner" />
-      <div className="loading-text">Fetching live data from Google Sheets…</div>
-    </div>
-  );
+  if (!appData) return <LoadingSkeleton progress={loadProgress} />;
 
   return (
     <div>
       <div className="page-bg" aria-hidden="true" />
+      {refreshing && <div className="load-progress active"><span style={{ width: `${loadProgress}%` }} /></div>}
       <div id="tip" className="tip" role="tooltip" aria-hidden="true" />
 
       <div className="app">
