@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { parseGasData, tasksBySquad, fmtDateSheet, canonicalSquad, norm, isDoingPriority, isPoPendingStatus } from './utils/data.js';
+import { parseGasData, tasksBySquad, canonicalSquad, norm, isDoingPriority, isPoPendingStatus } from './utils/data.js';
 import Gantt from './components/Gantt.jsx';
 import TweaksPanel from './components/TweaksPanel.jsx';
 
@@ -193,7 +193,7 @@ function GoLive({ appData, squad }) {
         {releases.map((g, i) => (
           <div className="tl-item" key={i}>
             <div className="tl-dateblock">
-              <span>{fmtDateSheet(g.date)}</span>
+              <span>{g.displayDate}</span>
             </div>
             <div className="tl-axis" aria-hidden="true" />
             <div className="tl-content">

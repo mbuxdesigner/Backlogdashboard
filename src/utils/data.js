@@ -59,6 +59,12 @@ export function parseDate(str) {
   return isNaN(d) ? null : d;
 }
 
+export function formatSheetDateValue(value, fallbackDate) {
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (fallbackDate instanceof Date && !isNaN(fallbackDate)) return fmtDateSheet(fallbackDate);
+  return '';
+}
+
 const field = (obj, keys) => {
   for (const key of keys) {
     if (obj?.[key] !== undefined && obj?.[key] !== null && obj?.[key] !== '') return obj[key];
@@ -189,14 +195,19 @@ export function parseGasData(gasData) {
   const sixWeeksAgo = new Date(thisMonday);
   sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 35);
   const rawGolive = gasData.golive || gasData.GoLive || gasData.GOLIVE || [];
-  const GOLIVE = (rawGolive.length ? rawGolive.map(g => ({
-    type: field(g, ['type', 'Type']) || '✅ Golive',
-    squad: canonicalSquad(field(g, ['squad', 'Squad'])),
-    feature: field(g, ['feature', 'Feature']),
-    note: field(g, ['note', 'Note']),
-    ux: field(g, ['ux', 'UX']),
-    date: parseDate(field(g, ['date', 'Date', 'ngay', 'Ngay', 'ngày', 'Ngày'])) || TODAY,
-  })) : rawTasks
+  const GOLIVE = (rawGolive.length ? rawGolive.map(g => {
+    const rawDate = field(g, ['date', 'Date', 'ngay', 'Ngay', 'ngày', 'Ngày']);
+    const date = parseDate(rawDate) || TODAY;
+    return {
+      type: field(g, ['type', 'Type']) || '✅ Golive',
+      squad: canonicalSquad(field(g, ['squad', 'Squad'])),
+      feature: field(g, ['feature', 'Feature']),
+      note: field(g, ['note', 'Note']),
+      ux: field(g, ['ux', 'UX']),
+      date,
+      displayDate: formatSheetDateValue(rawDate, date),
+    };
+  }) : rawTasks
     .filter(t => norm(taskStatus(t)) === 'release')
     .map(t => {
       let date = TODAY;
