@@ -238,7 +238,7 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .load-progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:10000;background:rgba(20,20,30,.06)}
 .load-progress span{display:block;height:100%;border-radius:0 999px 999px 0;background:linear-gradient(90deg,#ff9b5e,#5fb377,#7a5fd1);transition:width .22s ease}
 .load-progress.active{height:2px}
-.refresh-toast{position:fixed;right:20px;bottom:20px;z-index:10001;width:240px;padding:12px 14px;background:rgba(26,26,31,.92);color:white;border:1px solid rgba(255,255,255,.12);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);animation:fadeUp .2s ease both}
+.refresh-toast{position:fixed;right:28px;bottom:28px;z-index:10001;width:280px;padding:14px 16px;background:rgba(26,26,31,.94);color:white;border:1px solid rgba(255,255,255,.14);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.24);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);animation:fadeUp .2s ease both}
 .refresh-toast.done{background:rgba(30,86,52,.92)}
 .rt-copy{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:600}
 .rt-copy strong{font-family:'JetBrains Mono',monospace;font-size:12px}
@@ -246,7 +246,9 @@ body{font-family:'Inter',system-ui,sans-serif;color:var(--ink-0);background:var(
 .rt-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#ff9b5e,#5fb377,#d9e0ff);transition:width .22s ease}
 .skeleton-page{min-height:100vh}
 .sk,.sk-card{position:relative;overflow:hidden;background:rgba(20,20,30,.045);border:1px solid rgba(20,20,30,.05);border-radius:14px;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
-.sk::after,.sk-card::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.36),transparent);animation:shimmer 1.25s infinite}
+.sk::after,.sk-card::after{content:'';position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(20,20,30,.075),transparent);animation:shimmer 1.25s infinite}
+.app.is-refreshing .card{position:relative;overflow:hidden}
+.app.is-refreshing .card::after{content:'';position:absolute;inset:0;z-index:10;pointer-events:none;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(20,20,30,.065),transparent);animation:shimmer 1.15s infinite}
 .sk-brand{width:176px;height:42px}
 .sk-action{width:190px;height:44px;border-radius:999px}
 .sk-title{width:min(460px,55vw);height:70px;border-radius:18px}

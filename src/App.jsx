@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { parseGasData, tasksBySquad, canonicalSquad, norm, buildDoingWeekly, isDoingPriority, isPoPendingStatus, isStatus } from './utils/data.js';
 import Gantt from './components/Gantt.jsx';
 
@@ -225,9 +225,23 @@ export default function App() {
   const [showRefreshToast, setShowRefreshToast] = useState(false);
   const [squadGroup, setSquadGroup] = useState('All');
   const [squad, setSquad] = useState('All');
+  const refreshStartedAtRef = useRef(0);
+  const refreshHideTimerRef = useRef(null);
 
   const fetchData = useCallback((forceRefresh = false) => {
-    setLoadProgress(forceRefresh ? 18 : 8);
+    setLoadProgress(forceRefresh ? 24 : 8);
+    const finishRefresh = () => {
+      if (!forceRefresh) return;
+      const elapsed = Date.now() - refreshStartedAtRef.current;
+      const delay = Math.max(0, 700 - elapsed);
+      window.setTimeout(() => {
+        setLoadProgress(100);
+        setRefreshing(false);
+        refreshHideTimerRef.current = window.setTimeout(() => {
+          setShowRefreshToast(false);
+        }, 1400);
+      }, delay);
+    };
     if (!GAS_API_URL) {
       // Demo/dev mode — use mock data
       import('./utils/mockData.js')
@@ -238,10 +252,7 @@ export default function App() {
         })
         .catch(err => setError(err.message))
         .finally(() => {
-          setRefreshing(false);
-          if (forceRefresh) {
-            window.setTimeout(() => setShowRefreshToast(false), 900);
-          }
+          finishRefresh();
         });
       return;
     }
@@ -256,23 +267,31 @@ export default function App() {
       })
       .catch(err => setError(err.message))
       .finally(() => {
-        setRefreshing(false);
-        if (forceRefresh) {
-          window.setTimeout(() => setShowRefreshToast(false), 900);
-        }
+        finishRefresh();
       });
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => {
-    if (appData || error) return;
+    if (error || (appData && !refreshing)) return;
     const id = window.setInterval(() => {
-      setLoadProgress(p => Math.min(p + Math.max(1, (92 - p) * 0.14), 92));
+      const limit = refreshing ? 96 : 92;
+      setLoadProgress(p => Math.min(p + Math.max(1, (limit - p) * 0.14), limit));
     }, 180);
     return () => window.clearInterval(id);
-  }, [appData, error]);
+  }, [appData, error, refreshing]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshHideTimerRef.current) window.clearTimeout(refreshHideTimerRef.current);
+    };
+  }, []);
 
   const onRefresh = () => {
+    if (refreshing) return;
+    if (refreshHideTimerRef.current) window.clearTimeout(refreshHideTimerRef.current);
+    refreshStartedAtRef.current = Date.now();
+    setLoadProgress(8);
     setRefreshing(true);
     setShowRefreshToast(true);
     fetchData(true);
@@ -319,7 +338,7 @@ export default function App() {
       )}
       <div id="tip" className="tip" role="tooltip" aria-hidden="true" />
 
-      <div className="app">
+      <div className={`app${refreshing ? ' is-refreshing' : ''}`}>
         {/* ── Topbar ── */}
         <div className="topbar">
           <div className="brand">
